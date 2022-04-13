@@ -38,6 +38,46 @@ services:
         limits:
           memory: 500m
   
+  datanode2:
+    image: fjardim/datanode
+    container_name: datanode2
+    hostname: datanode2
+    volumes:
+      - ./data/hdfs/datanode2:/hadoop/dfs/data
+      #- ./data/hadoop/bank:/bank
+    env_file:
+      - ./data/hadoop/hadoop-hive.env
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070"
+    depends_on:
+      - namenode
+    ports:
+      - "50076:50075"
+    deploy:
+      resources:
+        limits:
+          memory: 500m
+  
+  datanode3:
+    image: fjardim/datanode
+    container_name: datanode3
+    hostname: datanode3
+    volumes:
+      - ./data/hdfs/datanode3:/hadoop/dfs/data
+      #- ./data/hadoop/bank:/bank
+    env_file:
+      - ./data/hadoop/hadoop-hive.env
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070"
+    depends_on:
+      - namenode
+    ports:
+      - "50077:50075"
+    deploy:
+      resources:
+        limits:
+          memory: 500m
+  
   hive-server:
     image: fjardim/hive
     container_name: hive-server
@@ -66,7 +106,7 @@ services:
       - ./data/hadoop/hadoop-hive.env
     command: /opt/hive/bin/hive --service metastore
     environment:
-      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432"
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 datanode2:50075 datanode3:50075 hive-metastore-postgresql:5432"
     ports:
       - "9083:9083"
     depends_on:
@@ -85,6 +125,8 @@ services:
       - pgdata:/var/lib/postgresql/data
     depends_on:
       - datanode
+      - datanode2
+      - datanode3
     deploy:
       resources:
         limits:
@@ -178,7 +220,7 @@ services:
     env_file:
       - ./data/hbase/hbase-standalone.env
     environment:
-      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 zookeeper:2181"
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 datanode2:50075 datanode3:50075 zookeeper:2181"
     ports:
       - 16010:16010
     depends_on:
