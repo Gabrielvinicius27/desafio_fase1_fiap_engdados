@@ -1,6 +1,29 @@
 # FIAP Solution Sprint Brazilian E-commerce
 
-# BIG DATA ECOSYSTEM COM DOCKER
+## Índice
+* [Introdução](#introducao)
+* [Descrição do Projeto](#descricao-do-projeto)
+* [Ecossistema Hadoop com Docker](#ecossistema-hadoop-com-docker)
+
+## Introdução
+O ecossistema hadoop é composto por diversas ferramentas, com o objetivo de utilizar os frameworks iremos analisar um dataset disponibilizado no Kaggle.
+
+Um conjunto de dados públicos de comércio eletrônico brasileiro foi fornecido pela Olist(https://olist.com/) no Kaggle (https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), este dataset contém dados comerciais reais de 100 mil pedidos de 2016 a 2018 realizados em diversos mercados no Brasil. Os dados foram anonimizados e as referências às empresas e parceiros no texto da revisão foram substituídas pelos nomes das grandes casas de Game of Thrones. As tabelas do dataset se relacionam da seguinte forma:
+![image](https://user-images.githubusercontent.com/49615846/165148902-58dcff90-dcaa-4637-85c8-b76a7f880ab0.png)
+
+Algumas perguntas devem ser respondidas sobre este conjunto de dados:
+* Segmentar os clientes por geolocalização.
+* Total de pedidos por período e categorias.
+* Total de pagamentos por método de pagamento.
+* Notas das avaliações.
+* Vendedores x vendas.
+* Produtos mais vendidos.
+
+## Descrição do Projeto
+
+
+
+## Ecossistema Hadoop Com Docker
 
 Ambiente para estudo dos principais frameworks big data em docker.
 <br> Esse setup vai criar dockers com os frameworks HDFS, HBase, Hive, Presto, Spark, Jupyter, Hue, Mongodb, Metabase, Nifi, kafka, Mysql e Zookeeper com a seguinte arquitetura:
@@ -8,12 +31,12 @@ Ambiente para estudo dos principais frameworks big data em docker.
 
 ![Ecossistema](ecosystem.jpeg)
 
-## SOFTWARES NECESSÁRIOS
+### SOFTWARES NECESSÁRIOS
 #### Para a criação e uso do ambiente vamos utilizar o git e o Docker 
    * Instalação do Docker Desktop no Windows [Docker Desktop](https://hub.docker.com/editions/community/docker-ce-desktop-windows) ou o docker no [Linux](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
    *  [Instalação do git](https://git-scm.com/book/pt-br/v2/Come%C3%A7ando-Instalando-o-Git)
    
-## SETUP
+### SETUP
 *OBS: Esse passo deve ser realizado apena uma vez. Após o ambiente criado, utilizar o docker-compose para iniciar os containers como mostrado no tópico INICIANDO O AMBIENTE*
 
 #### Criação do diretório docker:
@@ -34,7 +57,7 @@ Ambiente para estudo dos principais frameworks big data em docker.
 ![ls](ls.JPG)
 
    
-## INICIANDO O AMBIENTE
+### INICIANDO O AMBIENTE
    
   *No Windows abrir PowerShell, do Linux um terminal*
 
@@ -51,35 +74,35 @@ Ambiente para estudo dos principais frameworks big data em docker.
 
 ![docker container](docker_container_ls.JPG)
 
-## SOLUCIONANDO PROBLEMAS 
+### SOLUCIONANDO PROBLEMAS 
    
   *No Windows abrir o Docker Quickstart Terminal*
 
-### Parar um containers
+#### Parar um containers
          docker stop [nome do container]      
 
-### Parar todos containers
+#### Parar todos containers
          docker stop $(docker ps -a -q)
   
-### Remover um container
+#### Remover um container
          docker rm [nome do container]
 
-### Remover todos containers
+#### Remover todos containers
          docker rm $(docker ps -a -q)         
 
-### Dados do containers
+#### Dados do containers
          docker container inspect [nome do container]
 
-### Iniciar um container
+#### Iniciar um container
          docker-compose up -d [nome do container]
 
-### Iniciar todos os containers
+#### Iniciar todos os containers
          docker-compose up -d 
 
-### Acessar log do container
+#### Acessar log do container
          docker container logs [nome do container] 
 
-## Acesso WebUI dos Frameworks
+#### Acesso WebUI dos Frameworks
  
 * HDFS *http://localhost:50070*
 * Presto *http://localhost:8080*
@@ -92,7 +115,7 @@ Ambiente para estudo dos principais frameworks big data em docker.
 * Hue *http://localhost:8888*
 * Spark *http://localhost:4040*
 
-## Acesso por shell
+### Acesso por shell
 
    ##### HDFS
 
@@ -110,7 +133,7 @@ Ambiente para estudo dos principais frameworks big data em docker.
 
           docker exec -it kafka bash
 
-## Acesso JDBC
+### Acesso JDBC
 
    ##### MySQL
           jdbc:mysql://database/employees
@@ -123,7 +146,7 @@ Ambiente para estudo dos principais frameworks big data em docker.
 
           jdbc:presto://presto:8080/hive/default
 
-## Usuários e senhas
+### Usuários e senhas
 
    ##### Hue
     Usuário: admin
@@ -142,11 +165,11 @@ Ambiente para estudo dos principais frameworks big data em docker.
     Senha: root
     Authentication Database: admin
 
-## Imagens   
+### Imagens   
 
 [Docker Hub](https://hub.docker.com/u/fjardim)
 
-## Documentação Oficial
+### Documentação Oficial
 
 * https://zookeeper.apache.org/
 * https://kafka.apache.org/
