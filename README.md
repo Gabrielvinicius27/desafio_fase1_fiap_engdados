@@ -20,8 +20,20 @@ Algumas perguntas devem ser respondidas sobre este conjunto de dados:
 * Produtos mais vendidos.
 
 ## Descrição do Projeto
+Desenhamos a seguinte arquitetura para manipularmos os dados deste dataset e responder as perguntas.
 
+![Proposta Desafio-Page-2 (1)](https://user-images.githubusercontent.com/49615846/165369461-213d68be-430e-4ba8-86e6-d3fb5c1f62b0.png)
 
+**Fontes de dados**: 
+ * Kaggle: O dataset está armazenado no site Kaggle, no formato CSV. 
+ * Site Correios e Geopy: Na tabela de geolocalização temos CEP, cidade, estado, latitude e longitude, porém cada registro de cidade e estado tem coordenas diferentes, mesmo que dentro da mesma cidade, pois foi informado a coordenada do CEP com sufixo, como a coluna geolocation_zip_code_prefix apresenta apenas o CEP sem sufixo (5 digitos) desejamos que cada registro distindo de cidade e estado tenham as mesmas coordenadas. Para atingirmos este objetivo decidimos atualizar as cidades e estados de acordo com os dados dos Correios, fonte onde iremos buscar endereço usando o CEP, e as coordenadas com a API Geopy, fonte onde iremos buscar as coordenadas usando o endereço.
+
+**HDFS, Hadoop Distributed File System**:
+  O HDFS é um sistema de armazenamento de dados distribuídos, com ele é possível armazenar um grande volume de dados, pois esse framework armazena os dados em diversas máquinas, dessa forma o armazenamento se torna escalável horizontalmente, quando for necessário mais armaenamento um novo datanode é criado, quando o armazenamento diminui um datanode pode ser removido, o namenode (nó principal) faz o gerenciamento.
+  * Landing Zone: Este é o local onde iremos armazenar os dados brutos, no formato em que são extraídos, sem tratamento algum.
+
+**PySpark**:
+  Aqui é onde acontece o processamento distribuído, mais de um worker pode trabalhar tornando a ferramenta escalável, antes da execução do código é feito um planejamnento de execução
 
 ## Ecossistema Hadoop Com Docker
 
