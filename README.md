@@ -22,7 +22,14 @@ Algumas perguntas devem ser respondidas sobre este conjunto de dados:
 ## Descrição do Projeto
 Desenhamos a seguinte arquitetura para manipularmos os dados deste dataset e responder as perguntas.
 
-![Proposta Desafio-Page-2 (1)](https://user-images.githubusercontent.com/49615846/165369461-213d68be-430e-4ba8-86e6-d3fb5c1f62b0.png)
+![Captura de tela 2022-04-27 152804](https://user-images.githubusercontent.com/49615846/165594869-28d8c1f2-116a-4424-9697-9867f9d37994.png)
+
+| Item 	| Ferramenta       	| Descrição                                                                                                                        	|
+|:----:	|------------------	|----------------------------------------------------------------------------------------------------------------------------------	|
+|   1  	| Fonte - Kaggle   	| O dataset Olist está disponível para download no site Kaggle.                                                                    	|
+|   2  	| Fonte - Correios 	| Site para consultar endereços por CEP, aceita pesquisa usando apenas o prefixo (5 dígitos)                                       	|
+|   3  	| Fonte - Geopy    	| Biblioteca Python para consultar coordenadas por endereço, inserindo a cidade e endereço, latitude e longitude serão retornados. 	|
+|   4  	| Apache PySpark   	| Nesta etapa será utilizada a API do Kaggle para fazer o download do dataset no formato CSV.                                      	|
 
 **Fontes de dados**: 
  * Kaggle: O dataset está armazenado no site Kaggle, no formato CSV. 
