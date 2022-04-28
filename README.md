@@ -1,8 +1,8 @@
 # FIAP Solution Sprint Brazilian E-commerce
 
 ## Índice
-* [Introdução](#introducao)
-* [Descrição do Projeto](#descricao-do-projeto)
+* [Introdução](#introdução)
+* [Descrição do Projeto](#descrição-do-projeto)
 * [Ecossistema Hadoop com Docker](#ecossistema-hadoop-com-docker)
 
 ## Introdução
@@ -22,33 +22,27 @@ Algumas perguntas devem ser respondidas sobre este conjunto de dados:
 ## Descrição do Projeto
 Desenhamos a seguinte arquitetura para manipularmos os dados deste dataset e responder as perguntas.
 
-![Captura de tela 2022-04-27 152804](https://user-images.githubusercontent.com/49615846/165594869-28d8c1f2-116a-4424-9697-9867f9d37994.png)
+![image](https://user-images.githubusercontent.com/49615846/165752994-d7ed13db-1e58-4c2f-acf3-4cf0be87e293.png)
+| Item 	| Ferramenta       	| Descrição                                                                                                                                                                                                                                                                                                                                                                                                  	|
+|:----:	|------------------	|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	|
+|   1  	| Fonte - Kaggle   	| O dataset Olist está disponível para download no site Kaggle.                                                                                                                                                                                                                                                                                                                                              	|
+|   2  	| Fonte - Correios 	| Site para consultar endereços por CEP, aceita pesquisa usando apenas o prefixo (5 dígitos).                                                                                                                                                                                                                                                                                                                	|
+|   3  	| Fonte - Geopy    	| Biblioteca Python para consultar coordenadas por endereço, inserindo a cidade e endereço, latitude e longitude serão retornados.                                                                                                                                                                                                                                                                           	|
+|   4  	| Apache PySpark   	| Nesta etapa será utilizada a API do Kaggle para fazer o download do dataset no formato CSV.                                                                                                                                                                                                                                                                                                                	|
+|   5  	| Jupyter Notebook 	| Aplicação web onde é possível editar e executar scripts de programação, os scripts PySpark serão criados e executados neste ambiente.                                                                                                                                                                                                                                                                      	|
+|   6  	| HDFS             	| O Hadoop Distributed File System é um sistema de armazenamento distribuído, um namenode (nó mestre) gerencia e armazena metadados dos arquivos, que são armazenados em 1 ou mais datanodes (nós trabalhadores), dando escalabilidade ao armazenamento. Na landing zone os arquivos serão armazenados em sua forma bruta, sem tratamento.                                                                   	|
+|   7  	| Apache PySpark   	| Nesta etapa os arquivos CSV do dataset armazenados na landing zone serão transformados para o formato ORC.                                                                                                                                                                                                                                                                                                 	|
+|   8  	| Apache PySpark   	| A tabela de geolocalização possui como chave primaria os primeiros 5 digitos do CEP, e traz qual a cidade, estado e coordenadas, porém iremos atualizar as informações de cidade e estado com base nos dados da empresa Correios, esses dados serão consultados com uso da biblioteca python requests no site de busca de CEP do Correios ( https://buscacepinter.correios.com.br/app/endereco/index.php). 	|
+|   9  	| Apache PySpark   	| Após os dados de CEP serem atualizados com cidade e estado iremos atualizar as coordenadas com o uso da biblioteca python geopy, é informado o endereço e a biblioteca retorna a latitude e longitude.                                                                                                                                                                                                     	|
+|  10  	| HDFS             	| Os dados tratados serão armazenados em outra pasta do HDFS.                                                                                                                                                                                                                                                                                                                                                	|
+|  11  	| Apache HUE       	| O Apache HUE é um editor SQL open-source, será utilizado como uma User Interface (UI) para auxiliar nas consultas SQL no Hive.                                                                                                                                                                                                                                                                             	|
+|  12  	| Apache Hive      	| Software de data warehouse que facilita a leitura, escrita e manipulação de grandes datasets armazenados em armazenamento distribuído (HDFS) usando SQL.                                                                                                                                                                                                                                                   	|
+|  13  	| Metabase         	| Dataviz das tabelas criadas no Hive, respondendo as questões levantadas.                                                                                                                                                                                                                                                                                                                                   	|
 
-| Item 	| Ferramenta       	| Descrição                                                                                                                        	|
-|:----:	|------------------	|----------------------------------------------------------------------------------------------------------------------------------	|
-|   1  	| Fonte - Kaggle   	| O dataset Olist está disponível para download no site Kaggle.                                                                    	|
-|   2  	| Fonte - Correios 	| Site para consultar endereços por CEP, aceita pesquisa usando apenas o prefixo (5 dígitos)                                       	|
-|   3  	| Fonte - Geopy    	| Biblioteca Python para consultar coordenadas por endereço, inserindo a cidade e endereço, latitude e longitude serão retornados. 	|
-|   4  	| Apache PySpark   	| Nesta etapa será utilizada a API do Kaggle para fazer o download do dataset no formato CSV.                                      	|
-
-**Fontes de dados**: 
- * Kaggle: O dataset está armazenado no site Kaggle, no formato CSV. 
- * Site Correios e Geopy: Na tabela de geolocalização temos CEP, cidade, estado, latitude e longitude, porém cada registro de cidade e estado tem coordenas diferentes, mesmo que dentro da mesma cidade, pois foi informado a coordenada do CEP com sufixo, como a coluna geolocation_zip_code_prefix apresenta apenas o CEP sem sufixo (5 digitos) desejamos que cada registro distindo de cidade e estado tenham as mesmas coordenadas. Para atingirmos este objetivo decidimos atualizar as cidades e estados de acordo com os dados dos Correios, fonte onde iremos buscar endereço usando o CEP, e as coordenadas com a API Geopy, fonte onde iremos buscar as coordenadas usando o endereço.
-
-**HDFS, Hadoop Distributed File System**:
-  O HDFS é um sistema de armazenamento de dados distribuídos, com ele é possível armazenar um grande volume de dados, pois esse framework armazena os dados em diversas máquinas, dessa forma o armazenamento se torna escalável horizontalmente, quando for necessário mais armaenamento um novo datanode é criado, quando o armazenamento diminui um datanode pode ser removido, o namenode (nó principal) faz o gerenciamento.
-  * Landing Zone: Este é o local onde iremos armazenar os dados brutos, no formato em que são extraídos, sem tratamento algum.
-
-**PySpark**:
-  Aqui é onde acontece o processamento distribuído, mais de um worker pode trabalhar tornando a ferramenta escalável, antes da execução do código é feito um planejamnento de execução
 
 ## Ecossistema Hadoop Com Docker
-
-Ambiente para estudo dos principais frameworks big data em docker.
-<br> Esse setup vai criar dockers com os frameworks HDFS, HBase, Hive, Presto, Spark, Jupyter, Hue, Mongodb, Metabase, Nifi, kafka, Mysql e Zookeeper com a seguinte arquitetura:
+<br> Esse setup vai criar dockers com os frameworks HDFS, Hive, Presto, Spark, Jupyter, Hue,  Metabase, Mysql.
 <br>  
-
-![Ecossistema](ecosystem.jpeg)
 
 ### SOFTWARES NECESSÁRIOS
 #### Para a criação e uso do ambiente vamos utilizar o git e o Docker 
@@ -70,11 +64,10 @@ Ambiente para estudo dos principais frameworks big data em docker.
         ex: /home/user/docker
 
 #### Em um terminal/DOS, dentro diretório docker, realizar o clone do projeto no github
-          git clone https://github.com/fabiogjardim/bigdata_docker.git
+          git clone https://github.com/Gabrielvinicius27/desafio_fase1_fiap_engdados
 
 #### No diretório bigdata_docker vai existir os seguintes objetos
 ![ls](ls.JPG)
-
    
 ### INICIANDO O AMBIENTE
    
@@ -87,11 +80,12 @@ Ambiente para estudo dos principais frameworks big data em docker.
  
          docker image ls
 
-![docker image ls](docker_image_ls.JPG)
+![image](https://user-images.githubusercontent.com/49615846/165780971-03474480-c1c1-46ea-b8b8-c3214b183d35.png)
 
          docker container ls
+         
+![image](https://user-images.githubusercontent.com/49615846/165781325-c2f867da-2124-42b4-ad6f-c283db2c0b57.png)
 
-![docker container](docker_container_ls.JPG)
 
 ### SOLUCIONANDO PROBLEMAS 
    
@@ -125,11 +119,7 @@ Ambiente para estudo dos principais frameworks big data em docker.
  
 * HDFS *http://localhost:50070*
 * Presto *http://localhost:8080*
-* Hbase *http://localhost:16010/master-status*
-* Mongo Express *http://localhost:8081*
-* Kafka Manager *http://localhost:9000*
 * Metabase *http://localhost:3000*
-* Nifi *http://localhost:9090*
 * Jupyter Spark *http://localhost:8889*
 * Hue *http://localhost:8888*
 * Spark *http://localhost:4040*
@@ -139,18 +129,6 @@ Ambiente para estudo dos principais frameworks big data em docker.
    ##### HDFS
 
           docker exec -it datanode bash
-
-   ##### HBase
-
-          docker exec -it hbase-master bash
-
-   ##### Sqoop
-
-          docker exec -it datanode bash
-        
-   ##### Kafka
-
-          docker exec -it kafka bash
 
 ### Acesso JDBC
 
@@ -178,11 +156,6 @@ Ambiente para estudo dos principais frameworks big data em docker.
    ##### MySQL
     Usuário: root
     Senha: secret
-   
-   ##### MongoDB
-    Usuário: root
-    Senha: root
-    Authentication Database: admin
 
 ### Imagens   
 
@@ -190,16 +163,10 @@ Ambiente para estudo dos principais frameworks big data em docker.
 
 ### Documentação Oficial
 
-* https://zookeeper.apache.org/
-* https://kafka.apache.org/
-* https://nifi.apache.org/
 * https://prestodb.io/
 * https://spark.apache.org/
-* https://www.mongodb.com/
 * https://www.metabase.com/
 * https://jupyter.org/
-* https://hbase.apache.org/
-* https://sqoop.apache.org/
 * https://hadoop.apache.org/
 * https://hive.apache.org/
 * https://gethue.com/
