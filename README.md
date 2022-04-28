@@ -39,6 +39,95 @@ Desenhamos a seguinte arquitetura para manipularmos os dados deste dataset e res
 |  12  	| Apache Hive      	| Software de data warehouse que facilita a leitura, escrita e manipulação de grandes datasets armazenados em armazenamento distribuído (HDFS) usando SQL.                                                                                                                                                                                                                                                   	|
 |  13  	| Metabase         	| Dataviz das tabelas criadas no Hive, respondendo as questões levantadas.                                                                                                                                                                                                                                                                                                                                   	|
 
+## Notebooks
+### data/notebooks/Desafio1_FIAP/1_Kaggle Dataset Ingestion to HDFS.ipynb
+Este Notebook faz o download do dataset do Kaggle no formato CSV, utilizando a biblioteca python kaggle basta um token de autenticação, que foi gerado no site Kaggle em “Your Profile”, “Account”, em API botão “Generate New API Token”, um arquivo json será gerado e deve ser armazenado na pasta informada na variável de ambiente $KAGGLE_CONFIG_DIR, caso necessário permissões podem ser dadas com chmod
+
+```python
+import os
+base_path = "/mnt/notebooks/Desafio1_FIAP"
+os.environ["KAGGLE_CONFIG_DIR"] = f'{base_path}/kaggle_config_dir/'
+!chmod 600 /mnt/notebooks/Desafio1_FIAP/kaggle_config_dir/kaggle.json
+```
+
+O método kaggle.api_dataset_download_files faz o download do dataset no path dos parâmetros, caso desejar os arquivos descompactados é necessário usar unzip=True.
+```python
+import kaggle
+kaggle.api.authenticate()
+
+kaggle.api.dataset_download_files('olistbr/brazilian-ecommerce', 
+                                  path='/mnt/notebooks/Individual_Desafio1_FIAP/olist_dataset', 
+                                  unzip=True)
+```
+
+Os arquivos csv do dataset foram armazenados no HDFS com auxilio da biblioteca hdfs para fazer a conexão, pandas para formatar o arquivo csv mantendo o cabeçalho e removendo o index. Para se conectar ao HDFS foi necessário informar alguns parâmetros de conexão, incluindo o endereço URL do namenode e a porta 50070, também foi definida uma estratégia de retry. Os parâmetros foram definidos conforme código abaixo:
+```python
+import requests
+import os
+import pandas as pd 
+import hdfs
+import urllib3
+
+from hdfs import InsecureClient
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util import Retry
+
+max_threads = 50
+session = requests.Session()
+
+retry_strategy = Retry(
+    total=10,
+    connect=10,
+    read=10,
+    redirect=10,
+    status_forcelist=[429, 500, 502, 503, 504],
+    method_whitelist=["HEAD", "GET", "OPTIONS"],
+)
+
+adapter = HTTPAdapter(
+    max_retries=retry_strategy, pool_connections=max_threads, pool_maxsize=max_threads,
+)
+
+session.mount("https://", adapter)
+session.mount("http://", adapter)
+
+# client usando IP do host docker
+client = 'http://192.168.56.1:50070'
+
+# Client HDFS
+hdfs_client = InsecureClient(client, session=session)
+```
+
+Os arquivos csv foram gravados numa pasta que definimos como landing_zone, que tem como objetivo armazenar os dados em sua forma original, mantendo o formato csv.
+Um dos campos do dataset é o zip_code_prefix, CEP, ele contém 5 digitos e pode conter zeros a esquerda, por isso este campo precisou ser definido com tipo string em alguns arquivos, também foram removidos espaços extras e caracteres que indiquem quebra de linha e etc. 
+```python
+# Gravar o arquivo csv no HDFS
+for filename in os.listdir(f'{base_path}/olist_dataset'):
+    if filename == 'olist_customers_dataset.csv':
+        df = pd.read_csv(f'{base_path}/olist_dataset/{filename}', sep =',', dtype={'customer_zip_code_prefix':'object'})
+    elif filename == 'olist_sellers_dataset.csv':
+        df = pd.read_csv(f'{base_path}/olist_dataset/{filename}', sep =',', dtype={'seller_zip_code_prefix':'object'})
+    elif filename == 'olist_geolocation_dataset.csv':
+        df = pd.read_csv(f'{base_path}/olist_dataset/{filename}', sep =',', dtype={'geolocation_zip_code_prefix':'object'})
+    else:
+        df = pd.read_csv(f'{base_path}/olist_dataset/{filename}', sep =',')
+    df.replace(to_replace=[r"\\t|\\n|\\r", "\t|\n|\r"], value=["",""], regex=True, inplace=True)
+    try:
+        with hdfs_client.write(f'/datalake/landing_zone/{filename}', overwrite = True, encoding='utf-8') as writer:
+            df.to_csv(writer, header=True, index=False)
+        print(f"{filename} Gravado com sucesso")
+    except hdfs.util.HdfsError as e:
+        print(f"{filename} falhou")
+        print(f"[ERRO] {e}")
+    except urllib3.exceptions.NewConnectionError as e:
+        print(f"{filename} falhou")
+        print(f"[ERRO] {e}")
+    except Exception as e:
+        print(e)
+```
+A imagem abaixo mostra os arquivos armazenados no HDFS, esta é a interface do Apache HUE:
+![image](https://user-images.githubusercontent.com/49615846/165817162-337b08dc-0c44-4237-8209-2ab7a6e41007.png)
+
 
 ## Ecossistema Hadoop Com Docker
 <br> Esse setup vai criar dockers com os frameworks HDFS, Hive, Presto, Spark, Jupyter, Hue,  Metabase, Mysql.
