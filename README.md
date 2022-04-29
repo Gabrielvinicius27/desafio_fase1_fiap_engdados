@@ -4,7 +4,7 @@
 ## Índice
 * [Introdução](#introdução)
 * [Descrição do Projeto](#descrição-do-projeto)
-* [Notebook](#notebooks)
+* [Notebooks](#notebooks)
 * [Ecossistema Hadoop com Docker](#ecossistema-hadoop-com-docker)
 
 ## Introdução
@@ -43,6 +43,8 @@ Desenhamos a seguinte arquitetura para manipularmos os dados deste dataset e res
 
 ## Notebooks
 ### data/notebooks/Desafio1_FIAP/1_Kaggle Dataset Ingestion to HDFS.ipynb
+<details>
+<summary>clique para ver explicação</summary>
 Este Notebook faz o download do dataset do Kaggle no formato CSV, utilizando a biblioteca python kaggle basta um token de autenticação, que foi gerado no site Kaggle em “Your Profile”, “Account”, em API botão “Generate New API Token”, um arquivo json será gerado e deve ser armazenado na pasta informada na variável de ambiente $KAGGLE_CONFIG_DIR, caso necessário permissões podem ser dadas com chmod
 
 ```python
@@ -129,7 +131,150 @@ for filename in os.listdir(f'{base_path}/olist_dataset'):
 ```
 A imagem abaixo mostra os arquivos armazenados no HDFS, esta é a interface do Apache HUE:
 ![image](https://user-images.githubusercontent.com/49615846/165817162-337b08dc-0c44-4237-8209-2ab7a6e41007.png)
+  
+Por fim os arquivos são convertidos para ORC com auxilio da biblioteca pyspark, o formato ORC permite particionamento, compressão e schema, funcionalidades que podem ser utilizadas futuramente.
 
+É importante manter o cabeçalho com o nome das colunas no arquivo, pois quando a tabela hive for criada com location no caminho desse arquivo o schema da tabela deve bater com o schema do arquivo, as colunas devem possuir o mesmo nome, incluindo a distinção dos caracteres minúsculos e maiúsculos.
+```python
+from pyspark.sql import SparkSession
+
+spark = SparkSession \
+    .builder \
+    .appName("Ingest Olist Dataset") \
+    .getOrCreate()
+
+landing_zone = '/datalake/landing_zone/'
+files = hdfs_client.list(landing_zone)
+
+for filename in files:
+    csv = spark.read.csv(f'{landing_zone}/{filename}', header = True, sep = ',')
+    orc_name = filename.replace('csv', 'orc')
+    csv.write.orc(f'/datalake/dadosbrutos/{orc_name}', 'overwrite')
+```
+Arquivos armazenados no HDFS
+![image](https://user-images.githubusercontent.com/49615846/165946296-bd582fe7-7ee7-4cb8-90bc-47784c1382ca.png)
+</details>
+
+### data/notebooks/Desafio1_FIAP/2_Consulta Endereço por CEP com 5 digitos no Site do correio.ipynb
+<details>
+<summary>clique para ver explicação</summary>
+Este notebook tem como objetivo consultar todos os CEPs armazenados no arquivo olist_geolocation_dataset.orc para encontrar a cidade e estado, apenas o prefixo dos CEPs é fornecido, caso o CEP completo estivesse disponível seria possível utilizar a biblioteca pycep, neste caso será necessário usar o site da empresa Correios que aceita CEPs parciais. 
+  
+Primeiro criamos um dataframe pyspark para o arquivo olist_geolocation_dataset.orc
+```python
+from pyspark.sql import SparkSession
+from pyspark.sql import HiveContext
+
+hive_context = HiveContext(sc)
+
+spark = SparkSession \
+    .builder \
+    .appName("API Correios") \
+    .enableHiveSupport() \
+    .getOrCreate()
+
+geo = spark.read.orc('/datalake/dadosbrutos/olist_geolocation_dataset.orc')
+```
+Separamos os CEPs distintos, foram encontrados 19015 CEPs distintos neste arquivo.
+```python
+cep_array = [str(row.geolocation_zip_code_prefix) for row in geo.select('geolocation_zip_code_prefix').distinct().collect()]
+```
+Como iremos consultar um grande volume de CEPs uma consulta síncrona levaria muito tempo, pois o programa iria aguardar a resposta do site para seguir para o próximo passo, usando consultas assíncronas a execução é muito mais rápida, pois o programa recebe as respostas do site em momentos futuros e o resto do programa continua executando.
+
+Para atingir esse objetivo usamos a biblioteca asyncio e requests, a URL é 'https://buscacepinter.correios.com.br/app/endereco/carrega-cep-endereco.php' e consultamos com um método POST informando qual o CEP e qual o tipo de endereço, no nosso caso retornamos todos os tipos, o site retorna com uma lista de CEPs que correspondem com os 5 digitos informados, nós selecionamos o primeiro resultado encontrado, para um prefixo de CEP a cidade e estado será sempre a mesma, o que muda são os logradouros que nesse caso não serão usados.
+
+O código a seguir cria as funções get_address, get_all_addresses e consulta_lote. Dado o grande volume de CEPs iremos separar a consulta em lotes de 1000 consultas, caso aconteça alguma falha no meio do programa não iremos perder todo o progresso, a função consulta_lote inicia o loop assíncrono para cada lote. A função get_all_addresses gera as tasks assíncronas dentro de uma sessão, cada task corresponde a consulta de um CEP. A função get_address faz a consulta no site da empresa Correios e aguarda a resposta para inserir na lista de endereços que irá gerar um dataframe do lote.
+  
+Por fim utilizamos numpy.array_split para criar os lotes de CEPs.
+```python
+import asyncio
+import time
+import aiohttp
+import nest_asyncio
+import pandas as pd
+import json
+from pyspark.sql import Row
+
+global URL
+# URL do site do correios
+URL = 'https://buscacepinter.correios.com.br/app/endereco/carrega-cep-endereco.php'
+global ceps_com_erro
+ceps_com_erro = []
+# Função para pegar o primeiro resultado da pesquisa de CEP com apenas 5 digitos
+async def get_address(session, cep):
+    async with session.post(url=URL, data={'endereco': cep, 'tipoCEP': 'ALL'}) as response:
+        response = await response.text()
+        try:
+            data = json.loads(response)["dados"][0]
+            if data["cep"] != '': 
+                data_selected = {
+                    "cep": data["cep"],
+                    "uf": data["uf"],
+                    "cidade": data["localidade"]
+                }
+                results.append(data_selected)
+                print(f"{str(len(results)).zfill(6)} CEPs consultados", end="\r")
+        except Exception as e:
+            #print(f"ERRO: {e}", end="\r")
+            ceps_com_erro.append(cep)
+            pass
+
+# Função para criar as tasks assíncronas, uma task para cada cep
+async def get_all_addresses(ceps):
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for cep in ceps:
+            task = asyncio.ensure_future(get_address(session, cep))
+            tasks.append(task)
+        await asyncio.gather(*tasks, return_exceptions=False)
+        
+
+# Função prncipal para iniciar o loop assíncrono e criar o Dataframe com os resultados
+def consulta_lote(ceps_array):
+    global results
+    results = []
+    nest_asyncio.apply()
+    start_time = time.time()
+    asyncio.get_event_loop().run_until_complete(get_all_addresses(ceps_array))
+    
+    df = spark.createDataFrame((Row(**x) for x in results))
+    
+    duration = time.time() - start_time
+    print(f"Downloaded {len(ceps_array)} ceps in {duration/60} minutes")
+    return df
+```
+```python
+import math
+import numpy as np
+
+start_time = time.time()
+
+tamanho_lote = 1000
+qtd_lotes = math.floor(len(cep_array)/tamanho_lote)
+
+print(f"Iniciando a consulta de {qtd_lotes} lotes com aprox. {tamanho_lote} ceps cada.")
+cep_lotes = np.array_split(cep_array, qtd_lotes)
+
+dataframes = {}
+counter = 0
+for lote in cep_lotes:
+    counter += 1
+    print(f"Consultando lote {counter}")
+    dataframes[f"df_part{counter}"] = consulta_lote(lote)
+
+duration = time.time() - start_time
+print(f"Tempo total da carga: {duration/60} minutos")
+print(f"Total de CEPs não encontrados: {len(ceps_com_erro)}")
+```
+ 
+Resultado da execução: 19015 CEPs consultados em aproximadamente 3 minutos
+![image](https://user-images.githubusercontent.com/49615846/165949926-b7496d4a-c028-4797-83db-4db6af0686db.png)
+
+Após a união dos dataframes dos lotes em um datarame final o resultado é esse:
+![image](https://user-images.githubusercontent.com/49615846/165950104-3ceeaf05-1eb0-43ec-9364-d16a74e997cf.png)
+
+O resultado foi gravado no HDFS.
+</details>
 
 ## Ecossistema Hadoop Com Docker
 <br> Esse setup vai criar dockers com os frameworks HDFS, Hive, Presto, Spark, Jupyter, Hue,  Metabase, Mysql.
