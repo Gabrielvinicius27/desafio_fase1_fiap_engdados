@@ -100,7 +100,7 @@ services:
   
   hive-metastore:
     image: fjardim/hive
-    container_name: hive_metastore
+    container_name: hive_metastore  
     hostname: hive_metastore
     env_file:
       - ./data/hadoop/hadoop-hive.env
@@ -180,10 +180,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: 500m
+          memory: 1500m
 
   metabase:
-    image: fjardim/metabase
+    #image: fjardim/metabase
+    image: metabase/metabase
     container_name: metabase
     hostname: metabase
     volumes:
@@ -195,7 +196,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 500m
+          memory: 750m
 
   jupyter-notebook-custom:
     image: fjardim/jupyter-spark
