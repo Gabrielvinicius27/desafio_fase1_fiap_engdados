@@ -103,18 +103,10 @@ hdfs_client = InsecureClient(client, session=session)
 ```
 
 Os arquivos csv foram gravados numa pasta que definimos como landing_zone, que tem como objetivo armazenar os dados em sua forma original, mantendo o formato csv.
-Um dos campos do dataset é o zip_code_prefix, CEP, ele contém 5 digitos e pode conter zeros a esquerda, por isso este campo precisou ser definido com tipo string em alguns arquivos, também foram removidos espaços extras e caracteres que indiquem quebra de linha e etc. 
 ```python
 # Gravar o arquivo csv no HDFS
 for filename in os.listdir(f'{base_path}/olist_dataset'):
-    if filename == 'olist_customers_dataset.csv':
-        df = pd.read_csv(f'{base_path}/olist_dataset/{filename}', sep =',', dtype={'customer_zip_code_prefix':'object'})
-    elif filename == 'olist_sellers_dataset.csv':
-        df = pd.read_csv(f'{base_path}/olist_dataset/{filename}', sep =',', dtype={'seller_zip_code_prefix':'object'})
-    elif filename == 'olist_geolocation_dataset.csv':
-        df = pd.read_csv(f'{base_path}/olist_dataset/{filename}', sep =',', dtype={'geolocation_zip_code_prefix':'object'})
-    else:
-        df = pd.read_csv(f'{base_path}/olist_dataset/{filename}', sep =',')
+    df = pd.read_csv(f'{base_path}/olist_dataset/{filename}', sep =',')
     df.replace(to_replace=[r"\\t|\\n|\\r", "\t|\n|\r"], value=["",""], regex=True, inplace=True)
     try:
         with hdfs_client.write(f'/datalake/landing_zone/{filename}', overwrite = True, encoding='utf-8') as writer:
@@ -134,9 +126,13 @@ A imagem abaixo mostra os arquivos armazenados no HDFS, esta é a interface do A
   
 Por fim os arquivos são convertidos para ORC com auxilio da biblioteca pyspark, o formato ORC permite particionamento, compressão e schema, funcionalidades que podem ser utilizadas futuramente.
 
+A função spark.read.csv precisa do parâmetro inferSchema=True para o spark definir um data type para cada campo, é importante para que o Metabase funcione corretamente, na criação da tabela os datatypes precisam ser iguais aos do arquivo ORC.
+Um dos campos do dataset é o zip_code_prefix, CEP, ele contém 5 digitos e pode conter zeros a esquerda, por isso este campo precisou ser definido com tipo string em alguns arquivos.
+  
 É importante manter o cabeçalho com o nome das colunas no arquivo, pois quando a tabela hive for criada com location no caminho desse arquivo o schema da tabela deve bater com o schema do arquivo, as colunas devem possuir o mesmo nome, incluindo a distinção dos caracteres minúsculos e maiúsculos.
 ```python
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import lpad
 
 spark = SparkSession \
     .builder \
@@ -147,7 +143,14 @@ landing_zone = '/datalake/landing_zone/'
 files = hdfs_client.list(landing_zone)
 
 for filename in files:
-    csv = spark.read.csv(f'{landing_zone}/{filename}', header = True, sep = ',')
+    csv = spark.read.csv(f'{landing_zone}/{filename}', header = True, inferSchema=True, sep = ',')
+    if filename == 'olist_customers_dataset.csv':
+        csv = csv.withColumn('customer_zip_code_prefix', lpad(csv.customer_zip_code_prefix, 5, '0'))
+    elif filename == 'olist_sellers_dataset.csv':
+        csv = csv.withColumn('seller_zip_code_prefix', lpad(csv.seller_zip_code_prefix, 5, '0'))
+    elif filename == 'olist_geolocation_dataset.csv':
+        csv = csv.withColumn('geolocation_zip_code_prefix', lpad(csv.geolocation_zip_code_prefix, 5, '0'))
+    csv.printSchema()
     orc_name = filename.replace('csv', 'orc')
     csv.write.orc(f'/datalake/dadosbrutos/{orc_name}', 'overwrite')
 ```
@@ -181,12 +184,13 @@ cep_array = [str(row.geolocation_zip_code_prefix) for row in geo.select('geoloca
 ```
 Como iremos consultar um grande volume de CEPs uma consulta síncrona levaria muito tempo, pois o programa iria aguardar a resposta do site para seguir para o próximo passo, usando consultas assíncronas a execução é muito mais rápida, pois o programa recebe as respostas do site em momentos futuros e o resto do programa continua executando.
 
-Para atingir esse objetivo usamos a biblioteca asyncio e requests, a URL é 'https://buscacepinter.correios.com.br/app/endereco/carrega-cep-endereco.php' e consultamos com um método POST informando qual o CEP e qual o tipo de endereço, no nosso caso retornamos todos os tipos, o site retorna com uma lista de CEPs que correspondem com os 5 digitos informados, nós selecionamos o primeiro resultado encontrado, para um prefixo de CEP a cidade e estado será sempre a mesma, o que muda são os logradouros que nesse caso não serão usados.
+Para atingir esse objetivo usamos a biblioteca asyncio e requests, a URL é 'https://buscacepinter.correios.com.br/app/endereco/carrega-cep-endereco.php' e consultamos com um método POST informando qual o CEP e qual o tipo de endereço, no nosso caso retornamos todos os tipos, o site retorna com uma lista de CEPs que correspondem com os 5 digitos informados, nós selecionamos o primeiro resultado encontrado com o campo cep correto, para um prefixo de CEP a cidade e estado será sempre a mesma, o que muda são os logradouros que nesse caso não serão usados.
 
 O código a seguir cria as funções get_address, get_all_addresses e consulta_lote. Dado o grande volume de CEPs iremos separar a consulta em lotes de 1000 consultas, caso aconteça alguma falha no meio do programa não iremos perder todo o progresso, a função consulta_lote inicia o loop assíncrono para cada lote. A função get_all_addresses gera as tasks assíncronas dentro de uma sessão, cada task corresponde a consulta de um CEP. A função get_address faz a consulta no site da empresa Correios e aguarda a resposta para inserir na lista de endereços que irá gerar um dataframe do lote.
   
 Por fim utilizamos numpy.array_split para criar os lotes de CEPs.
 ```python
+
 import asyncio
 import time
 import aiohttp
@@ -205,15 +209,17 @@ async def get_address(session, cep):
     async with session.post(url=URL, data={'endereco': cep, 'tipoCEP': 'ALL'}) as response:
         response = await response.text()
         try:
-            data = json.loads(response)["dados"][0]
-            if data["cep"] != '': 
-                data_selected = {
-                    "cep": data["cep"],
-                    "uf": data["uf"],
-                    "cidade": data["localidade"]
-                }
-                results.append(data_selected)
-                print(f"{str(len(results)).zfill(6)} CEPs consultados", end="\r")
+            for i in range(len(json.loads(response)["dados"])):
+                data = json.loads(response)["dados"][i]
+                if data["cep"] != '' and data["cep"][0:5] == cep: 
+                    data_selected = {
+                        "cep": data["cep"],
+                        "uf": data["uf"],
+                        "cidade": data["localidade"]
+                    }
+                    results.append(data_selected)
+                    print(f"{str(len(results)).zfill(6)} CEPs consultados", end="\r")
+                    break
         except Exception as e:
             #print(f"ERRO: {e}", end="\r")
             ceps_com_erro.append(cep)
