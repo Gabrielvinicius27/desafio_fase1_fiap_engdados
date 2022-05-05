@@ -282,6 +282,52 @@ Após a união dos dataframes dos lotes em um datarame final o resultado é esse
 O resultado foi gravado no HDFS.
 </details>
 
+### data/notebooks/Desafio1_FIAP/3_Consulta Coordenadas por Endereço.ipynb
+<details>
+<summary>clique para ver explicação</summary>
+Com as cidades e estados atualizados é preciso atualizar as coordenadas, Geopy é uma biblioteca python para dados de geolocalização, ao informar uma cidade e estado as coordenadas são retornadas.
+
+O código abaixo envia de forma síncrona cada cidade e estado distintos para o Geopy que retorna as latitudes e longitudes, em aproximadamente 3,5 horas mais de 18 mil endereços são processados.
+  
+```python
+from geopy.geocoders import Nominatim
+import time
+
+start_time = time.time()
+# Cidade e estado distintos
+cidades_ufs = geo.select('cep_5_digitos','cidade','uf').distinct().collect()
+qtde_cidades_ufs = geo.select('cep_5_digitos','cidade','uf').distinct().count()
+
+coords = []
+counter = 0
+
+# Consulta com o Geopy qual as coordenadas para cada conjunto cidade, estado.
+for linha in cidades_ufs:
+    print(f"{counter}º Consulta de {qtde_cidades_ufs}", end="\r")
+    try:
+        geolocator = Nominatim(user_agent="test_app", timeout=15)
+        location = geolocator.geocode(f'{linha["cidade"]}, {linha["uf"]}')
+        coords.append([linha['cep_5_digitos'], location.raw["lat"], location.raw["lon"]])
+        counter += 1
+    except Exception as e:
+        print(e)
+        pass
+
+# Cria o dataframe com as coordenadas de cada cep
+coords_df = spark.createDataFrame(coords, schema=["cep_5_digitos","lat", "lon"])
+coords_df.show(truncate=False)
+duration = time.time() - start_time
+print(f"Tempo total: {duration/60} minutes")
+```
+Resultado:
+  
+  ![image](https://user-images.githubusercontent.com/49615846/166977830-c0b5229d-a29f-41c1-8015-0a12af6672a8.png)
+
+É feito um join entre a tabela com cidade e estados atualizados e esta tabela de coordenadas.
+  
+  ![image](https://user-images.githubusercontent.com/49615846/166978010-79d82704-c905-4840-949e-baba50dc99bd.png)
+</details>
+
 ## Ecossistema Hadoop Com Docker
 <br> Esse setup vai criar dockers com os frameworks HDFS, Hive, Presto, Spark, Jupyter, Hue,  Metabase, Mysql.
 <br>  
