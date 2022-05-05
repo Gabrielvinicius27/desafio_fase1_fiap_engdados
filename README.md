@@ -4,10 +4,11 @@
 ## Índice
 * [Introdução](#introdução)
 * [Descrição do Projeto](#descrição-do-projeto)
-* [Notebooks](#notebooks)
 * [Ecossistema Hadoop com Docker](#ecossistema-hadoop-com-docker)
+* [Notebooks](#notebooks)
+* [Visualização dos Dados](#visualização-dos-dados)
 
-## Introdução
+## 📌Introdução
 O ecossistema hadoop é composto por diversas ferramentas, com o objetivo de utilizar os frameworks iremos analisar um dataset disponibilizado no Kaggle.
 
 Um conjunto de dados públicos de comércio eletrônico brasileiro foi fornecido pela Olist(https://olist.com/) no Kaggle (https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), este dataset contém dados comerciais reais de 100 mil pedidos de 2016 a 2018 realizados em diversos mercados no Brasil. Os dados foram anonimizados e as referências às empresas e parceiros no texto da revisão foram substituídas pelos nomes das grandes casas de Game of Thrones. As tabelas do dataset se relacionam da seguinte forma:
@@ -21,7 +22,7 @@ Algumas perguntas devem ser respondidas sobre este conjunto de dados:
 * Vendedores x vendas.
 * Produtos mais vendidos.
 
-## Descrição do Projeto
+## 📌Descrição do Projeto
 Desenhamos a seguinte arquitetura para manipularmos os dados deste dataset e responder as perguntas.
 
 ![image](https://user-images.githubusercontent.com/49615846/165752994-d7ed13db-1e58-4c2f-acf3-4cf0be87e293.png)
@@ -39,9 +40,141 @@ Desenhamos a seguinte arquitetura para manipularmos os dados deste dataset e res
 |  10  	| HDFS             	| Os dados tratados serão armazenados em outra pasta do HDFS.                                                                                                                                                                                                                                                                                                                                                	|
 |  11  	| Apache HUE       	| O Apache HUE é um editor SQL open-source, será utilizado como uma User Interface (UI) para auxiliar nas consultas SQL no Hive.                                                                                                                                                                                                                                                                             	|
 |  12  	| Apache Hive      	| Software de data warehouse que facilita a leitura, escrita e manipulação de grandes datasets armazenados em armazenamento distribuído (HDFS) usando SQL.                                                                                                                                                                                                                                                   	|
-|  13  	| Metabase         	| Dataviz das tabelas criadas no Hive, respondendo as questões levantadas.                                                                                                                                                                                                                                                                                                                                   	|
+|  13  	| Metabase         	| Dataviz das tabelas criadas no Hive, respondendo as questões levantadas.                                                                                                                                                                                                                                                                                                                                  	|
+## 📌Ecossistema Hadoop Com Docker
+<br> Esse setup vai criar dockers com os frameworks HDFS, Hive, Presto, Spark, Jupyter, Hue,  Metabase, Mysql.
+<br>  
 
-## Notebooks
+### SOFTWARES NECESSÁRIOS
+#### Para a criação e uso do ambiente vamos utilizar o git e o Docker 
+   * Instalação do Docker Desktop no Windows [Docker Desktop](https://hub.docker.com/editions/community/docker-ce-desktop-windows) ou o docker no [Linux](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
+   *  [Instalação do git](https://git-scm.com/book/pt-br/v2/Come%C3%A7ando-Instalando-o-Git)
+   
+### SETUP
+*OBS: Esse passo deve ser realizado apena uma vez. Após o ambiente criado, utilizar o docker-compose para iniciar os containers como mostrado no tópico INICIANDO O AMBIENTE*
+
+#### Criação do diretório docker:
+*OBS: Criar um diretório chamado docker*
+
+   *  Sugestão no Windows:
+      *  Criar na raiz do seu drive o diretório docker
+         ex: C:\docker
+          
+   * Sugestão no Linux:
+      * Criar o diretório na home do usuário
+        ex: /home/user/docker
+
+#### Em um terminal/DOS, dentro diretório docker, realizar o clone do projeto no github
+          git clone https://github.com/Gabrielvinicius27/desafio_fase1_fiap_engdados
+
+#### No diretório bigdata_docker vai existir os seguintes objetos
+![ls](ls.JPG)
+   
+### INICIANDO O AMBIENTE
+   
+  *No Windows abrir PowerShell, do Linux um terminal*
+
+### No terminal, no diretorio bigdata_docker, executar o docker-compose
+          docker-compose up -d        
+
+### Verificar imagens e containers
+ 
+         docker image ls
+
+![image](https://user-images.githubusercontent.com/49615846/165780971-03474480-c1c1-46ea-b8b8-c3214b183d35.png)
+
+         docker container ls
+         
+![image](https://user-images.githubusercontent.com/49615846/165781325-c2f867da-2124-42b4-ad6f-c283db2c0b57.png)
+
+
+### SOLUCIONANDO PROBLEMAS 
+   
+  *No Windows abrir o Docker Quickstart Terminal*
+
+#### Parar um containers
+         docker stop [nome do container]      
+
+#### Parar todos containers
+         docker stop $(docker ps -a -q)
+  
+#### Remover um container
+         docker rm [nome do container]
+
+#### Remover todos containers
+         docker rm $(docker ps -a -q)         
+
+#### Dados do containers
+         docker container inspect [nome do container]
+
+#### Iniciar um container
+         docker-compose up -d [nome do container]
+
+#### Iniciar todos os containers
+         docker-compose up -d 
+
+#### Acessar log do container
+         docker container logs [nome do container] 
+
+#### Acesso WebUI dos Frameworks
+ 
+* HDFS *http://localhost:50070*
+* Presto *http://localhost:8080*
+* Metabase *http://localhost:3000*
+* Jupyter Spark *http://localhost:8889*
+* Hue *http://localhost:8888*
+* Spark *http://localhost:4040*
+
+### Acesso por shell
+
+   ##### HDFS
+
+          docker exec -it datanode bash
+
+### Acesso JDBC
+
+   ##### MySQL
+          jdbc:mysql://database/employees
+
+   ##### Hive
+
+          jdbc:hive2://hive-server:10000/default
+
+   ##### Presto
+
+          jdbc:presto://presto:8080/hive/default
+
+### Usuários e senhas
+
+   ##### Hue
+    Usuário: admin
+    Senha: admin
+
+   ##### Metabase
+    Usuário: bigdata@class.com
+    Senha: bigdata123 
+
+   ##### MySQL
+    Usuário: root
+    Senha: secret
+
+### Imagens   
+
+[Docker Hub](https://hub.docker.com/u/fjardim)
+
+### Documentação Oficial
+
+* https://prestodb.io/
+* https://spark.apache.org/
+* https://www.metabase.com/
+* https://jupyter.org/
+* https://hadoop.apache.org/
+* https://hive.apache.org/
+* https://gethue.com/
+* https://github.com/yahoo/CMAK
+* https://www.docker.com/
+
+## 📌Notebooks
 ### data/notebooks/Desafio1_FIAP/1_Kaggle Dataset Ingestion to HDFS.ipynb
 <details>
 <summary>clique para ver explicação</summary>
@@ -328,135 +461,241 @@ Resultado:
   ![image](https://user-images.githubusercontent.com/49615846/166978010-79d82704-c905-4840-949e-baba50dc99bd.png)
 </details>
 
-## Ecossistema Hadoop Com Docker
-<br> Esse setup vai criar dockers com os frameworks HDFS, Hive, Presto, Spark, Jupyter, Hue,  Metabase, Mysql.
-<br>  
+### data/notebooks/Desafio1_FIAP/4_Criar Tabelas no HIVE.ipynb
+<details>
+<summary>clique para ver explicação</summary>
+Os resultados das etapas anteriores foram gravados em arquivos ORC, com o Hive conseguimos criar tabelas externas com location nos arquivos criados, nessas tabelas definimos as colunas e data types.
 
-### SOFTWARES NECESSÁRIOS
-#### Para a criação e uso do ambiente vamos utilizar o git e o Docker 
-   * Instalação do Docker Desktop no Windows [Docker Desktop](https://hub.docker.com/editions/community/docker-ce-desktop-windows) ou o docker no [Linux](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
-   *  [Instalação do git](https://git-scm.com/book/pt-br/v2/Come%C3%A7ando-Instalando-o-Git)
-   
-### SETUP
-*OBS: Esse passo deve ser realizado apena uma vez. Após o ambiente criado, utilizar o docker-compose para iniciar os containers como mostrado no tópico INICIANDO O AMBIENTE*
+Para esta tarefa foi utilizada a biblioteca Jaydebeapi, que faz a conexão JDBC com o Hive, e foi utilizada a biblioteca PyGithub para fazer o download do driver JDBC hive. No repositório timveil/hive-jdbc-uber-jar estão armazenadas as releases do drive, o código abaixo faz o download dos assets da última release disponível.
+```python
+from github import Github
+import requests
+import os
 
-#### Criação do diretório docker:
-*OBS: Criar um diretório chamado docker*
+base_path = "/mnt/notebooks/Desafio1_FIAP"
 
-   *  Sugestão no Windows:
-      *  Criar na raiz do seu drive o diretório docker
-         ex: C:\docker
-          
-   * Sugestão no Linux:
-      * Criar o diretório na home do usuário
-        ex: /home/user/docker
+g = Github()
+asset = g.get_repo('timveil/hive-jdbc-uber-jar').get_latest_release().get_assets()[0]
+url = asset.browser_download_url
+print(asset.name)
+print(url)
 
-#### Em um terminal/DOS, dentro diretório docker, realizar o clone do projeto no github
-          git clone https://github.com/Gabrielvinicius27/desafio_fase1_fiap_engdados
+response = requests.get(url)
+open(f'{base_path}/driver/{asset.name}', 'wb').write(response.content)
+response.close()
+``` 
+Após o download do driver é possível estabelecer a conexão, é preciso indicar qual o endereço de onde o driver está armazenado, o driver que será usado, o database e url de conexão JDBC
+```python
+import jaydebeapi
 
-#### No diretório bigdata_docker vai existir os seguintes objetos
-![ls](ls.JPG)
-   
-### INICIANDO O AMBIENTE
-   
-  *No Windows abrir PowerShell, do Linux um terminal*
+# Jar
+base_path = "/mnt/notebooks/Desafio1_FIAP"
+hivejar = f"{base_path}/driver/{asset.name}"
+driver = "org.apache.hive.jdbc.HiveDriver"
+database = "db_olist"
+# JDBC connection string
+url=("jdbc:hive2://hive-server:10000/db_olist")
+dadosbrutos_folder = '/datalake/dadosbrutos'
 
-### No terminal, no diretorio bigdata_docker, executar o docker-compose
-          docker-compose up -d        
+# Connect to HiveServer2 
+conn = jaydebeapi.connect(jclassname=driver, url=url, jars=hivejar)
+cursor = conn.cursor()
+```
+Para criar as tabelas foi utilizado um dicionário python com os scripts DDL que serão executados, cada chave indica o nome da tabela e o valor indica o script, as tabelas serão armazenadas no formato ORC e sua location é o endereço do arquivo ORC que foi gravado no HDFS. Cada nome e data type de coluna deve ser igual ao nome e data type da coluna do arquivo, foi utilizado o método printSchema() do DataFrame Spark para verificar o nome e data type das colunas no ORC.
+```python
+# Tabelas que serão criadas
+tabelas = {'geolocation': f"""
+            CREATE EXTERNAL TABLE {database}.geolocation
+            (
+                geolocation_zip_code_prefix STRING COMMENT '5 primeiros digitos do CEP.',
+                geolocation_lat DOUBLE COMMENT 'Latitude.',
+                geolocation_lng DOUBLE COMMENT 'Longitude.',
+                geolocation_city STRING COMMENT 'Cidade.',
+                geolocation_state STRING COMMENT 'Estado.'
+            ) COMMENT 'Tabela com CEPs brasileiros, e dados de geolocalização.'
+            STORED AS ORC
+            LOCATION '/datalake/dadosbrutos/olist_geolocation_dataset.orc/'
+            """,
+           
+           'customers': f"""
+            CREATE EXTERNAL TABLE {database}.customers
+            (
+                customer_id STRING COMMENT 'Chave para a tabela de ordens. Cada ordem tem um customer_id único.',
+                customer_unique_id STRING COMMENT 'Identificador único do cliente.',
+                customer_zip_code_prefix STRING COMMENT 'Primeiros 5 digitos do CEP do cliente.',
+                customer_city STRING COMMENT 'Cidade do endereço do cliente.',
+                customer_state STRING COMMENT 'Estado do endereço do cliente.'
+            ) COMMENT 'Tabela com clientes e seus dados de geolocalização.'
+            STORED AS ORC
+            LOCATION '/datalake/dadosbrutos/olist_customers_dataset.orc/'
+            """,
+           
+           'order_items': f"""
+            CREATE EXTERNAL TABLE {database}.order_items
+            (
+                order_id STRING COMMENT 'Identificador único da ordem.',
+                order_item_id INT COMMENT 'Número sequencial identificando o número de itens incluídos na mesma ordem.',
+                product_id STRING COMMENT 'Identificador único do produto.',
+                seller_id STRING COMMENT 'Identificador único do vendedor.',
+                shipping_limit_date TIMESTAMP COMMENT 'Mostra a data limite de entrega do vendedor para o parceiro logístico.',
+                price DOUBLE COMMENT 'Preço do item.',
+                freight_value DOUBLE COMMENT 'Valor do frete do item (se um pedido tiver mais de um item o valor do frete é dividido entre os itens).'
+            ) COMMENT 'Tabela com dados dos itens comprados em uma ordem.'
+            STORED AS ORC
+            LOCATION '/datalake/dadosbrutos/olist_order_items_dataset.orc/'
+            """,
+           
+           'order_payments': f"""
+            CREATE EXTERNAL TABLE {database}.order_payments
+            (
+                order_id STRING COMMENT 'Identificador único da ordem.',
+                payment_sequential INT COMMENT 'Um cliente pode pagar uma ordem com mais de um método de pagamento, a coluna indica a sequencia',
+                payment_type STRING COMMENT 'Método de pagamento escolhido.',
+                payment_installments INT COMMENT 'Número de parcelas escolhidas pelo cliente.',
+                payment_value DOUBLE COMMENT 'Valor do pagamento.'
+            ) COMMENT 'Tabela com dados de pagamento da ordem.'
+            STORED AS ORC
+            LOCATION '/datalake/dadosbrutos/olist_order_payments_dataset.orc/'
+            """,
+           
+           'order_reviews': f"""
+            CREATE EXTERNAL TABLE {database}.order_reviews
+            (
+                review_id STRING COMMENT 'Identificador único do review.',
+                order_id STRING COMMENT 'Identificador único da ordem.',
+                review_score INTEGER COMMENT 'Nota de 1 a 5 dada pelo cliente na pesquisa de satisfação',
+                review_comment_title STRING COMMENT 'Título do comentário.',
+                review_comment_message STRING COMMENT 'Mensagem do comentário.',
+                review_creation_date TIMESTAMP COMMENT 'Data em que a pesquisa de satisfação foi envada.',
+                review_answer_timestamp TIMESTAMP COMMENT 'Data em que a pesquisa de satisfação foi respondida.'
+            ) COMMENT 'Tabela com dados dos reviews feitos pelos clientes.'
+            STORED AS ORC
+            LOCATION '/datalake/dadosbrutos/olist_order_reviews_dataset.orc/'
+            """,
+           
+           'orders': f"""
+            CREATE EXTERNAL TABLE {database}.orders
+            (
+                order_id STRING COMMENT 'Identificador único da ordem.',
+                customer_id STRING COMMENT 'Identificador único do cliente',
+                order_status STRING COMMENT 'Status da ordem (delivered, shipped, etc).',
+                order_purchase_timestamp TIMESTAMP COMMENT 'Data da compra.',
+                order_approved_at TIMESTAMP COMMENT 'Data de aprovação do pagamento.',
+                order_delivered_carrier_date TIMESTAMP COMMENT 'Data em que o produto foi entregue ao parceiro logístico.',
+                order_delivered_customer_date TIMESTAMP COMMENT 'Data em que o produto foi entregue ao cliente.',
+                order_estimated_delivery_date TIMESTAMP COMMENT 'Data de entrega estimada informada ao cliente no momento da compra.'
+            ) COMMENT 'Tabela com dados das ordens.'
+            STORED AS ORC
+            LOCATION '/datalake/dadosbrutos/olist_orders_dataset.orc/'
+            """,
+           
+           'products': f"""
+            CREATE EXTERNAL TABLE {database}.products
+            (
+                product_id STRING COMMENT 'Identificador único do produto.',
+                product_category_name STRING COMMENT 'Nome da categoria do produto.',
+                product_name_lenght DOUBLE COMMENT 'Número de caracteres extraídos do nome do produto.',
+                product_description_lenght DOUBLE COMMENT 'Número de caracteres extraídos da descrição do produto.',
+                product_photos_qty DOUBLE COMMENT 'Número de fotos publicadas do produto.',
+                product_weight_g DOUBLE COMMENT 'Peso do produto medido em gramas.',
+                product_length_cm DOUBLE COMMENT 'Comprimento do produto medido em centímetros.',
+                product_height_cm DOUBLE COMMENT 'Altura do produto medida em centímetros.',
+                product_width_cm DOUBLE COMMENT 'Largura do produto medida em centímetros.'
+            ) COMMENT 'Tabela com dados dos produtos.'
+            STORED AS ORC
+            LOCATION '/datalake/dadosbrutos/olist_products_dataset.orc/'
+            """,
+           
+           'sellers': f"""
+            CREATE EXTERNAL TABLE {database}.sellers
+            (
+                seller_id STRING COMMENT 'Identificador único do vendedor.',
+                seller_zip_code_prefix STRING COMMENT '5 primeiros digitos do CEP do vendedor.',
+                seller_city STRING COMMENT 'Cidade do endereço do vendedor.',
+                seller_state STRING COMMENT 'Estado do endereço do vendedor.'
+            ) COMMENT 'Tabela com dados dos vendedores.'
+            STORED AS ORC
+            LOCATION '/datalake/dadosbrutos/olist_sellers_dataset.orc/'
+            """,
+           
+           'product_category_name_translation': f"""
+            CREATE EXTERNAL TABLE {database}.product_category_name_translation
+            (
+                product_category_name STRING COMMENT 'Nome da categoria do produto em português .',
+                product_category_name_english STRING COMMENT 'Nome da categoria do produto em inglês .'
+            ) COMMENT 'Tabela de tradução do nome da categoria do produto.'
+            STORED AS ORC
+            LOCATION '/datalake/dadosbrutos/product_category_name_translation.orc/'
+            """,
+           
+           'geolocation_correios': f"""
+            CREATE EXTERNAL TABLE {database}.geolocation_correios
+            (
+                cep_5_digitos STRING COMMENT 'Prefixo do CEP.',
+                cidade STRING COMMENT 'Cidade.',
+                uf STRING COMMENT 'Estado.',
+                lat DOUBLE COMMENT 'Latitude.',
+                lon DOUBLE COMMENT 'Longitude.'
+            ) COMMENT 'Tabela de geolocalização atualizada com dados dos correios e da biblioteca geopy.'
+            STORED AS ORC
+            LOCATION '/datalake/dadosbrutos/geolocation_correios_coords.orc'
+            """,
+           
+          }
 
-### Verificar imagens e containers
- 
-         docker image ls
 
-![image](https://user-images.githubusercontent.com/49615846/165780971-03474480-c1c1-46ea-b8b8-c3214b183d35.png)
-
-         docker container ls
-         
-![image](https://user-images.githubusercontent.com/49615846/165781325-c2f867da-2124-42b4-ad6f-c283db2c0b57.png)
-
-
-### SOLUCIONANDO PROBLEMAS 
-   
-  *No Windows abrir o Docker Quickstart Terminal*
-
-#### Parar um containers
-         docker stop [nome do container]      
-
-#### Parar todos containers
-         docker stop $(docker ps -a -q)
+for item in tabelas:
+    # Dropar tabela caso ela já existir
+    sql = f"""
+        DROP TABLE IF EXISTS {database}.{item}
+    """
+    cursor.execute(sql)
+    # Criar a tabela
+    query = tabelas[item].strip('\n').strip('\t')
+    sql = query
+    cursor.execute(sql)
+```
+Exemplo de visualização das tabelas no HUE:
   
-#### Remover um container
-         docker rm [nome do container]
+![image](https://user-images.githubusercontent.com/49615846/166987235-4e5c7d1b-9d87-454c-9451-1dd1f4ffed5c.png)
 
-#### Remover todos containers
-         docker rm $(docker ps -a -q)         
+</details>
 
-#### Dados do containers
-         docker container inspect [nome do container]
+## 📌Visualização dos Dados
+Neste projeto foram levantadas as perguntas abaixo, utilizamos o Metabase para responder as questões, com essa ferramenta conseguimos criar visualizações, gráficos e consultas SQL com o uso do Presto que é um mecanismo de consulta distribuído.
 
-#### Iniciar um container
-         docker-compose up -d [nome do container]
+* Segmentar os clientes por geolocalização.
+* Total de pedidos por período e categorias.
+* Total de pagamentos por método de pagamento.
+* Notas das avaliações.
+* Vendedores x vendas.
+* Produtos mais vendidos.
 
-#### Iniciar todos os containers
-         docker-compose up -d 
+Resultados obtidos:
+### Quantidade de Clientes por Estado
+![Alt Text](https://github.com/Gabrielvinicius27/desafio_fase1_fiap_engdados/blob/master/quantidade_clientes_por_estado.gif)
 
-#### Acessar log do container
-         docker container logs [nome do container] 
+### Quantidade de Clientes por Cidade em São Paulo.
+![Alt Text](https://github.com/Gabrielvinicius27/desafio_fase1_fiap_engdados/blob/master/quantidade_clientes_por_cidade_SP.gif)
 
-#### Acesso WebUI dos Frameworks
- 
-* HDFS *http://localhost:50070*
-* Presto *http://localhost:8080*
-* Metabase *http://localhost:3000*
-* Jupyter Spark *http://localhost:8889*
-* Hue *http://localhost:8888*
-* Spark *http://localhost:4040*
+### Localização dos Vendedores 
+![image](https://user-images.githubusercontent.com/49615846/167004859-5401566a-f1f0-4f7a-adb9-dbee6722c7b3.png)
 
-### Acesso por shell
+### Total de Pedidos por Período e Categoria
+![Alt Text](https://github.com/Gabrielvinicius27/desafio_fase1_fiap_engdados/blob/master/total_pedidos_por_periodo_e_categoria.gif)
 
-   ##### HDFS
+### Total de Pagamentos por Método de Pagamento
+![Alt_Text](https://github.com/Gabrielvinicius27/desafio_fase1_fiap_engdados/blob/master/total_pagamentos_por_metodo_pagamento.gif)
 
-          docker exec -it datanode bash
+### Média das avaliações por Vendedor
+![image](https://user-images.githubusercontent.com/49615846/167005140-51dac559-459e-429c-a7d1-b0055da4d8b7.png)
 
-### Acesso JDBC
+### Vendedores X Vendas
+![image](https://user-images.githubusercontent.com/49615846/167005317-bd49c4b2-b073-4ea3-ad5a-6e68d3d8f16e.png)
 
-   ##### MySQL
-          jdbc:mysql://database/employees
+### Categorias de Produtos Mais Vendidos
+![image](https://user-images.githubusercontent.com/49615846/167005480-bad48f00-d579-4633-8c29-c81f8e25f8ec.png)
 
-   ##### Hive
 
-          jdbc:hive2://hive-server:10000/default
 
-   ##### Presto
-
-          jdbc:presto://presto:8080/hive/default
-
-### Usuários e senhas
-
-   ##### Hue
-    Usuário: admin
-    Senha: admin
-
-   ##### Metabase
-    Usuário: bigdata@class.com
-    Senha: bigdata123 
-
-   ##### MySQL
-    Usuário: root
-    Senha: secret
-
-### Imagens   
-
-[Docker Hub](https://hub.docker.com/u/fjardim)
-
-### Documentação Oficial
-
-* https://prestodb.io/
-* https://spark.apache.org/
-* https://www.metabase.com/
-* https://jupyter.org/
-* https://hadoop.apache.org/
-* https://hive.apache.org/
-* https://gethue.com/
-* https://github.com/yahoo/CMAK
-* https://www.docker.com/
+###
