@@ -25,7 +25,7 @@ Algumas perguntas devem ser respondidas sobre este conjunto de dados:
 ## 📌Descrição do Projeto
 Desenhamos a seguinte arquitetura para manipularmos os dados deste dataset e responder as perguntas.
 
-![image](https://user-images.githubusercontent.com/49615846/165752994-d7ed13db-1e58-4c2f-acf3-4cf0be87e293.png)
+![image](https://user-images.githubusercontent.com/49615846/169177369-773fba48-5270-4591-b1e0-cadd520dc33d.png)
 | Item 	| Ferramenta       	| Descrição                                                                                                                                                                                                                                                                                                                                                                                                  	|
 |:----:	|------------------	|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------	|
 |   1  	| Fonte - Kaggle   	| O dataset Olist está disponível para download no site Kaggle.                                                                                                                                                                                                                                                                                                                                              	|
