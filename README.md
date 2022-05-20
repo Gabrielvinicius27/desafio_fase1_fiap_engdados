@@ -695,7 +695,3 @@ Resultados obtidos:
 
 ### Categorias de Produtos Mais Vendidos
 ![image](https://user-images.githubusercontent.com/49615846/167005480-bad48f00-d579-4633-8c29-c81f8e25f8ec.png)
-
-
-
-###
